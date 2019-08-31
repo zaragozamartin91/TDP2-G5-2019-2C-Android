@@ -13,10 +13,9 @@ public enum AtmBank {
      * @param banks Nombres de bancos
      * @return Nomrbes de bancos normalizados y ordenados alfabeticamente
      */
-    public List<String> normalize(List<String> banks) {
+    public List<String> sort(List<String> banks) {
         return banks.stream()
                 .filter(Objects::nonNull)
-                .map(String::toUpperCase)
                 .sorted(String::compareTo)
                 .collect(Collectors.toList());
     }
