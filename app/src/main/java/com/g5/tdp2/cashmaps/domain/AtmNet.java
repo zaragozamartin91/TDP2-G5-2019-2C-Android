@@ -1,4 +1,4 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.domain;
 
 import com.google.android.gms.common.util.Strings;
 

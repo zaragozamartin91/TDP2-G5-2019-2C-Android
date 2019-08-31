@@ -1,4 +1,4 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.domain;
 
 import java.util.Arrays;
 import java.util.List;

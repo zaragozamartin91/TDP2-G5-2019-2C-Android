@@ -1,4 +1,7 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.gateway;
+
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
 
 import java.util.List;
 

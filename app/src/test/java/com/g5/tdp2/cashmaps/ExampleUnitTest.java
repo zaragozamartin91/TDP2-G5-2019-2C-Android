@@ -2,20 +2,13 @@ package com.g5.tdp2.cashmaps;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 

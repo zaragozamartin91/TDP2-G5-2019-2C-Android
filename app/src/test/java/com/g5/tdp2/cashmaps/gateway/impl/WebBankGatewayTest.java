@@ -1,11 +1,13 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.gateway.impl;
+
+import com.g5.tdp2.cashmaps.gateway.BankGateway;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 public class WebBankGatewayTest {
     BankGateway bankGateway = new WebBankGateway();

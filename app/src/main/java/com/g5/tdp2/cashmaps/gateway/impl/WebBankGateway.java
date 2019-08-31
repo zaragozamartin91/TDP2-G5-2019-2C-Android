@@ -1,7 +1,10 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.gateway.impl;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.g5.tdp2.cashmaps.domain.AtmBank;
+import com.g5.tdp2.cashmaps.gateway.AtmGatewayException;
+import com.g5.tdp2.cashmaps.gateway.BankGateway;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-class WebBankGateway implements BankGateway {
+public class WebBankGateway implements BankGateway {
     private String baseUrl;
 
     public WebBankGateway() {

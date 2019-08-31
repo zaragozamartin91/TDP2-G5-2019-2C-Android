@@ -1,4 +1,8 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.gateway.impl;
+
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
+import com.g5.tdp2.cashmaps.gateway.AtmGateway;
 
 import org.junit.Ignore;
 import org.junit.Test;
