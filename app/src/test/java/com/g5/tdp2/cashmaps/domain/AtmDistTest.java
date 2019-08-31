@@ -20,6 +20,12 @@ public class AtmDistTest {
 
     @Test
     public void getDefaultReturns500Radius() {
-        assertEquals(500 , AtmDist.getDefault().radius);
+        assertEquals(500, AtmDist.getDefault().radius);
     }
+
+    /*
+    * -58.37090179	-34.60581294
+-58.37097578	-34.60509000
+
+    * */
 }

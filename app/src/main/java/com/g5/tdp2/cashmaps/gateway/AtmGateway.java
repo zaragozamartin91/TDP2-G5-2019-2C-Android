@@ -48,5 +48,10 @@ public interface AtmGateway {
         public Request() {
             this(null, null);
         }
+
+        @Override
+        public String toString() {
+            return "" + net + "-" + bank;
+        }
     }
 }

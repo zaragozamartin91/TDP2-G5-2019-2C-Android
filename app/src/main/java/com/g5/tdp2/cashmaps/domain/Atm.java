@@ -3,6 +3,10 @@ package com.g5.tdp2.cashmaps.domain;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * Entidad o punto con cajeros automaticos
  */
@@ -74,6 +78,57 @@ public class Atm {
      */
     public int getTerms() {
         return terms;
+    }
+
+    private static Stream<Atm> filterAtm(Stream<Atm> atms, AtmNet net) {
+        return atms.filter(a -> net.equals(a.net));
+    }
+
+    private static Stream<Atm> filterBank(Stream<Atm> atms, String bank) {
+        return atms.filter(a -> bank.equals(a.bank));
+    }
+
+    /**
+     * Filtra un conjunto de cajeros unicamente por red y banco
+     *
+     * @param atms Cajeros a filtrar
+     * @param net  Red
+     * @param bank Banco
+     * @return Cajeros filtrados
+     */
+    public static List<Atm> filter(List<Atm> atms, AtmNet net, String bank) {
+        Stream<Atm> atmStream = atms.stream();
+        return filterBank(filterAtm(atmStream, net), bank).collect(Collectors.toList());
+    }
+
+    /**
+     * Verifica que un punto este dentro de la distancia especificada.
+     *
+     * @param myLat  Latitud
+     * @param myLon  Longitud
+     * @param radius Radio
+     * @return True si el punto esta dentro de la distancia
+     */
+    public boolean withinDist(double myLat, double myLon, double radius) {
+        return AtmDist.distanceMts(myLat, myLon, lat, lon) < radius;
+    }
+
+    /**
+     * Filtra todos los cajeros de una red y un banco especificados que esten a una distancia de radio indicada
+     *
+     * @param atms   Lista de atms
+     * @param net    Red
+     * @param bank   Banco
+     * @param myLat  Mi latitud
+     * @param myLon  Mi longitud
+     * @param radius Radio
+     * @return Lista con cajeros que cumplen con los criterios definidos
+     */
+    public static List<Atm> filter(List<Atm> atms, AtmNet net, String bank, double myLat, double myLon, double radius) {
+        List<Atm> filtered = filter(atms, net, bank);
+        return filtered.stream()
+                .filter(a -> a.withinDist(myLat, myLon, radius))
+                .collect(Collectors.toList());
     }
 
     @Override

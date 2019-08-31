@@ -1,11 +1,13 @@
 package com.g5.tdp2.cashmaps.domain;
 
+import android.location.Location;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Radios de distancia permitidos para los filtros
+ * Utilitario de distancias
  */
 public enum AtmDist {
     R_100(100), R_200(200), R_500(500), R_1000(1000);
@@ -36,5 +38,28 @@ public enum AtmDist {
      */
     public static List<Integer> radii() {
         return Arrays.stream(AtmDist.values()).map(a -> a.radius).collect(Collectors.toList());
+    }
+
+    /**
+     * Calcula la distancia en metros entre my ubicacion y un destino
+     *
+     * @param myLat  Mi latitud
+     * @param myLon  Mi longitud
+     * @param tgtLat Latitud destino
+     * @param tgtLon Longitud destino
+     * @return Distancia en metros calculada
+     */
+    public static double distanceMts(double myLat, double myLon, double tgtLat, double tgtLon) {
+        Location myLocation = getLocation(myLat, myLon);
+        Location targetLocation = getLocation(tgtLat, tgtLon);
+
+        return targetLocation.distanceTo(myLocation);
+    }
+
+    private static Location getLocation(double myLat, double myLon) {
+        Location myLocation = new Location("");
+        myLocation.setLatitude(myLat);
+        myLocation.setLongitude(myLon);
+        return myLocation;
     }
 }
