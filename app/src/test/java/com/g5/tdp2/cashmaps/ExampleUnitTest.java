@@ -1,7 +1,14 @@
 package com.g5.tdp2.cashmaps;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
+
 import org.json.JSONException;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -27,5 +34,13 @@ public class ExampleUnitTest {
 
         assertEquals("BANELCO", AtmNet.BANELCO.toString());
         assertEquals("LINK", AtmNet.LINK.toString());
+    }
+
+    @Test
+    public void handleResponse() throws IOException {
+        String response = "[{\"id\":41100,\"long\":-58.4101627019175,\"lat\":-34.5583857696065,\"banco\":\"HSBC Bank Argentina\",\"red\":\"BANELCO\",\"ubicacion\":\"\",\"localidad\":\"CABA\",\"terminales\":2,\"no_vidente\":false,\"dolares\":false,\"calle\":\"\",\"altura\":0,\"calle2\":\"\",\"barrio\":\"\",\"comuna\":\"\",\"codigo_postal\":\"\",\"codigo_postal_argentino\":\"\"},{\"id\":40720,\"long\":-58.4084250406506,\"lat\":-34.5600587161855,\"banco\":\"BBVA Banco Francés\",\"red\":\"BANELCO\",\"ubicacion\":\"\",\"localidad\":\"CABA\",\"terminales\":1,\"no_vidente\":false,\"dolares\":false,\"calle\":\"\",\"altura\":0,\"calle2\":\"\",\"barrio\":\"\",\"comuna\":\"\",\"codigo_postal\":\"\",\"codigo_postal_argentino\":\"\"}]";
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Atm[] atms = mapper.readValue(response, Atm[].class);
+        assertEquals(2, atms.length);
     }
 }

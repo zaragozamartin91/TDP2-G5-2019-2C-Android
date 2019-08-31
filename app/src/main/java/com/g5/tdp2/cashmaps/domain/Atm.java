@@ -1,4 +1,7 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.domain;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Entidad o punto con cajeros automaticos
@@ -24,7 +27,15 @@ public class Atm {
      * @param bank    Banco
      * @param terms   Cantidad de terminales
      */
-    public Atm(long id, double lat, double lon, String address, AtmNet net, String bank, int terms) {
+    @JsonCreator
+    public Atm(
+            @JsonProperty("id") long id,
+            @JsonProperty("lat") double lat,
+            @JsonProperty("long") double lon,
+            @JsonProperty("ubicacion") String address,
+            @JsonProperty("red") AtmNet net,
+            @JsonProperty("banco") String bank,
+            @JsonProperty("terminales") int terms) {
         this.id = id;
         this.lat = lat;
         this.lon = lon;

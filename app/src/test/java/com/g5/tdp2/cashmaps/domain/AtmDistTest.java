@@ -1,4 +1,6 @@
-package com.g5.tdp2.cashmaps;
+package com.g5.tdp2.cashmaps.domain;
+
+import com.g5.tdp2.cashmaps.domain.AtmDist;
 
 import org.junit.Test;
 
