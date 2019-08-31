@@ -14,9 +14,9 @@ public interface AtmGateway {
      *
      * @param request Filtro de request
      * @return Bancos filtrados por el request indicado
-     * @throws AtmGatewayException Si ocurre un error al obtener los ATMs
+     * @throws GatewayException Si ocurre un error al obtener los ATMs
      */
-    List<Atm> getAtms(Request request) throws AtmGatewayException;
+    List<Atm> getAtms(Request request) throws GatewayException;
 
     class Request {
         public final AtmNet net;
