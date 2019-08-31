@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TDP2-G5-2019-2C-Android</string>
     <string name="title_activity_maps">Map</string>
+    <string name="no_access_location">Cannot continue without access location</string>
 </resources>
