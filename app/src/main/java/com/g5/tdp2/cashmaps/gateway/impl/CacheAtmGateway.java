@@ -16,8 +16,20 @@ public class CacheAtmGateway implements AtmGateway {
     private AtmGateway atmGateway;
     private Map<String, List<Atm>> atmMap = new HashMap<>();
 
+    /**
+     * Crea un gateway de cache a partir de uno existente.
+     *
+     * @param atmGateway Gateway existente
+     */
     public CacheAtmGateway(AtmGateway atmGateway) {
         this.atmGateway = atmGateway;
+    }
+
+    /**
+     * Crea un cache gateway a partir del web
+     */
+    public CacheAtmGateway() {
+        this(new WebAtmGateway());
     }
 
     @Override
