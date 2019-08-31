@@ -3,7 +3,7 @@ package com.g5.tdp2.cashmaps.gateway.impl;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g5.tdp2.cashmaps.domain.AtmBank;
-import com.g5.tdp2.cashmaps.gateway.AtmGatewayException;
+import com.g5.tdp2.cashmaps.gateway.GatewayException;
 import com.g5.tdp2.cashmaps.gateway.BankGateway;
 
 import java.io.BufferedReader;
@@ -39,9 +39,9 @@ public class WebBankGateway implements BankGateway {
                 return handleResponse(response);
             }
         } catch (IOException e) {
-            throw new AtmGatewayException("Error en la red al obtener Bancos", e);
+            throw new GatewayException("Error en la red al obtener Bancos", e);
         } catch (IllegalArgumentException e) {
-            throw new AtmGatewayException("Error al parsear respuesta de Bancos", e);
+            throw new GatewayException("Error al parsear respuesta de Bancos", e);
         } finally {
             Optional.ofNullable(connection).ifPresent(HttpURLConnection::disconnect);
         }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
-import com.g5.tdp2.cashmaps.gateway.AtmGatewayException;
+import com.g5.tdp2.cashmaps.gateway.GatewayException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class WebAtmGateway implements AtmGateway {
     }
 
     @Override
-    public List<Atm> getAtms(Request request) throws AtmGatewayException {
+    public List<Atm> getAtms(Request request) throws GatewayException {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(buildRequestUrl(request));
@@ -42,9 +42,9 @@ public class WebAtmGateway implements AtmGateway {
                 return handleResponse(response);
             }
         } catch (IOException e) {
-            throw new AtmGatewayException("Error en la red al obtener ATMs", e);
+            throw new GatewayException("Error en la red al obtener ATMs", e);
         } catch (IllegalArgumentException e) {
-            throw new AtmGatewayException("Error al parsear respuesta de ATMs", e);
+            throw new GatewayException("Error al parsear respuesta de ATMs", e);
         } finally {
             Optional.ofNullable(connection).ifPresent(HttpURLConnection::disconnect);
         }
