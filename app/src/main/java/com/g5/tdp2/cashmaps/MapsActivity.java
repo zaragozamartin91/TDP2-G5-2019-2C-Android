@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -275,6 +276,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(Location location) {
         Log.d("CHANGED", "LOCATION UPDATED");
+        currentLocation.set(location);
     }
 
     @Override
@@ -353,15 +355,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void setUpMap() {
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         try {
-            Optional<Location> location = Optional.ofNullable(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+            Location location =
+                    Optional.ofNullable(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER))
+                            .orElseGet(() -> locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER));
 
-            if (location.isPresent()) {
+            if (location != null) {
                 Log.d("location-get", "NOT NULL");
-                currentLocation.set(location.get());
-                centerAndMarkLocation(location.get());
+                currentLocation.set(location);
+                centerAndMarkLocation(location);
             } else {
                 Log.d("location-get", "NULL");
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
             }
         } catch (SecurityException se) {
             Log.d("location-get", "SE CAUGHT");
