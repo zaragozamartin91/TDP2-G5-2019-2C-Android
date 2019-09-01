@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,33 +119,20 @@ public class Atm {
      * Filtra todos los cajeros de una red y un banco especificados que esten a una distancia de radio indicada
      *
      * @param atms   Lista de atms
-     * @param net    Red
-     * @param bank   Banco
+     * @param net    Red [OPCIONAL]
+     * @param bank   Banco [OPCIONAL]
      * @param myLat  Mi latitud
      * @param myLon  Mi longitud
      * @param radius Radio
      * @return Lista con cajeros que cumplen con los criterios definidos
      */
     public static List<Atm> filter(List<Atm> atms, AtmNet net, String bank, double myLat, double myLon, double radius) {
-        List<Atm> filtered = filter(atms, net, bank);
-        return filtered.stream()
-                .filter(a -> a.withinDist(myLat, myLon, radius))
-                .collect(Collectors.toList());
-    }
+        Predicate<Atm> netPredicate = net == null ? a -> true : a -> net.equals(a.net);
+        Predicate<Atm> bankPredicate = bank == null || bank.isEmpty() ? a -> true : a -> bank.equals(a.bank);
 
-    /**
-     * Filtra todos los cajeros de una red y radio especificados
-     *
-     * @param atms   Lista de atms
-     * @param net    Red
-     * @param myLat  Mi latitud
-     * @param myLon  Mi longitud
-     * @param radius Radio
-     * @return Lista con cajeros que cumplen con los criterios definidos
-     */
-    public static List<Atm> filter(List<Atm> atms, AtmNet net, double myLat, double myLon, double radius) {
         return atms.stream()
-                .filter(a -> net.equals(a.net))
+                .filter(netPredicate)
+                .filter(bankPredicate)
                 .filter(a -> a.withinDist(myLat, myLon, radius))
                 .collect(Collectors.toList());
     }
