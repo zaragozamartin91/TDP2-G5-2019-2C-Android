@@ -18,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -51,6 +52,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private Spinner spinnerBanks, spinnerNets, spinnerRadio;
+    private ImageButton searchButton;
 
     private static final String[] INITIAL_PERMS = {
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -96,6 +98,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         loadSpinnerNet();
         loadSpinnerRadio();
         loadAtms(new AtmRequest());
+        searchButton = (ImageButton) findViewById(R.id.search_button);
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                filterAndSetAtms(atmsRef.get());
+            }
+        });
     }
 
     /**
@@ -181,7 +190,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } else {
                     filterBank = null;
                 }
-                filterAndSetAtms(atmsRef.get());
+                //filterAndSetAtms(atmsRef.get());
             }
 
             @Override
@@ -223,7 +232,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 java.util.Collections.sort(banksByNet);
                 loadSpinnerBanks(banksByNet);
-                filterAndSetAtms(atmsRef.get());
+                //filterAndSetAtms(atmsRef.get());
             }
 
             @Override
@@ -250,7 +259,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("radio-selected", adapterView.getItemAtPosition(i).toString());
                 filterRadio = Integer.parseInt(adapterView.getItemAtPosition(i).toString());
-                filterAndSetAtms(atmsRef.get());
+                //filterAndSetAtms(atmsRef.get());
             }
 
             @Override
