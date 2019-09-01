@@ -43,6 +43,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -122,7 +123,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
      */
     private void loadAtms(AtmRequest atmRequest) {
-        new AtmFetchTask(atmGateway, atms -> atmsRef.compareAndSet(NO_ATMS, atms)).execute(atmRequest);
+        new AtmFetchTask(atmGateway, atms -> {
+            atmsRef.compareAndSet(NO_ATMS, atms);
+            Toast.makeText(this, "Cajeros cargados", Toast.LENGTH_SHORT).show();
+        }).execute(atmRequest);
     }
 
 
