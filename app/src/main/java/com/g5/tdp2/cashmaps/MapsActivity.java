@@ -285,6 +285,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onLocationChanged(Location location) {
         Log.d("CHANGED", "LOCATION UPDATED");
         currentLocation.set(location);
+        Optional.ofNullable(location).ifPresent(this::centerAndMarkLocation);
     }
 
     @Override
@@ -322,17 +323,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void centerAndMarkLocation(Location location) {
         Optional.ofNullable(mMap).ifPresent(m -> {
             LatLng latLngLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            int height = 75;
-            int width = 75;
-            BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.curr_loc);
-            Bitmap b = bitmapdraw.getBitmap();
-            Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
-            m.addMarker(
-                    new MarkerOptions()
-                            .position(latLngLocation)
-                            .title("current-location")
-                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))
-            );
+//            int height = 75;
+//            int width = 75;
+//            BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.curr_loc);
+//            Bitmap b = bitmapdraw.getBitmap();
+//            Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
+//            m.addMarker(
+//                    new MarkerOptions()
+//                            .position(latLngLocation)
+//                            .title("current-location")
+//                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))
+//            );
             CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(latLngLocation, 15);
             m.animateCamera(yourLocation);
         });
@@ -370,9 +371,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 currentLocation.set(location);
                 centerAndMarkLocation(location);
             } else {
+                Toast.makeText(this, R.string.no_location, Toast.LENGTH_LONG).show();
                 Log.d("location-get", "NULL");
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5f, this);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 5f, this);
             }
         } catch (SecurityException se) {
             Log.d("location-get", "SE CAUGHT");
