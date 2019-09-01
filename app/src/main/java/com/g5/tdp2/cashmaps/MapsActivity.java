@@ -160,7 +160,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
                 if (!selectedFilter.equals("Cualquier red")) {
                     filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
-                    if ()
                 } else {
                     filterNet = null;
                 }
