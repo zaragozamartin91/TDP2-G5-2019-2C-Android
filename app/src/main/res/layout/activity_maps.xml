@@ -5,32 +5,55 @@
     android:padding="5dp">
 
     <LinearLayout
-        android:id="@+id/spinners"
+        android:id="@+id/filters"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:elevation="10dp" >
-        <Spinner
-            android:id="@+id/select_bank"
+        android:orientation="horizontal"
+        android:weightSum="100"
+        android:elevation="10dp">
+
+        <LinearLayout
+            android:id="@+id/spinners"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:spinnerMode="dialog"
-            android:prompt="@string/banks_prompt" >
-        </Spinner>
-        <Spinner
-            android:id="@+id/select_net"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:spinnerMode="dialog"
-            android:prompt="@string/net_prompt" >
-        </Spinner>
-        <Spinner
-            android:id="@+id/select_radio"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:spinnerMode="dialog"
-            android:prompt="@string/radio_prompt" >
-        </Spinner>
+            android:weightSum="100"
+            android:layout_weight="75"
+            android:background="@color/white"
+            android:orientation="vertical" >
+            <Spinner
+                android:id="@+id/select_bank"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="33"
+                android:spinnerMode="dialog"
+                android:prompt="@string/banks_prompt" >
+            </Spinner>
+            <Spinner
+                android:id="@+id/select_net"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="33"
+                android:spinnerMode="dialog"
+                android:prompt="@string/net_prompt" >
+            </Spinner>
+            <Spinner
+                android:id="@+id/select_radio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="33"
+                android:spinnerMode="dialog"
+                android:prompt="@string/radio_prompt" >
+            </Spinner>
+        </LinearLayout>
+        <ImageButton
+            android:id="@+id/search_button"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_weight="25"
+            android:background="@color/white"
+            android:paddingHorizontal="7dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/search" />
     </LinearLayout>
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
@@ -40,7 +63,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/spinners"
+        android:layout_below="@id/filters"
         tools:context=".MapsActivity" />
 
 </RelativeLayout>

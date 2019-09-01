@@ -18,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -52,6 +53,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private Spinner spinnerBanks, spinnerNets, spinnerRadio;
+    private ImageButton searchButton;
 
     private static final String[] INITIAL_PERMS = {
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -97,6 +99,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         findViewById(R.id.select_bank).setEnabled(false);
         loadSpinnerNet();
         loadSpinnerRadio();
+        searchButton = findViewById(R.id.search_button);
+        searchButton.setOnClickListener(view -> refreshAtms());
     }
 
     /**
@@ -152,27 +156,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void loadSpinnerBanks(List<String> banks) {
-        if (banks == null) {
-            banks = new ArrayList<String>();
-        }
-        banks.add(0, "Cualquier banco");
-        spinnerBanks = (Spinner) findViewById(R.id.select_bank);
-        spinnerBanks.setEnabled(true);
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, banks);
+        ArrayList<String> spinnerOptions = new ArrayList<>();
+        spinnerOptions.add("Cualquier banco");
+        spinnerOptions.addAll(Optional.ofNullable(banks).orElse(new ArrayList<>()));
+
+        spinnerBanks = findViewById(R.id.select_bank);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, spinnerOptions);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerBanks.setAdapter(dataAdapter);
 
         spinnerBanks.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
-                if (!selectedFilter.equals("Cualquier banco")) {
-                    filterBank = adapterView.getItemAtPosition(i).toString();
-                } else {
-                    filterBank = null;
-                }
+                filterBank = selectedFilter.equals("Cualquier banco") ? null : adapterView.getItemAtPosition(i).toString();
                 refreshAtms();
             }
 
@@ -197,7 +194,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
-                if (!selectedFilter.equals("Cualquier red")) {
+
+                if (selectedFilter.equals("Cualquier red")) {
+                    findViewById(R.id.select_bank).setEnabled(false);
+                    filterNet = null;
+                    List<String> banks = new ArrayList<>(banelcoBanks.get() == null ? new ArrayList<>() : banelcoBanks.get());
+                    banks.addAll(linkBanks.get() == null ? new ArrayList<>() : linkBanks.get());
+                    loadSpinnerBanks(banks);
+                } else {
+                    findViewById(R.id.select_bank).setEnabled(true);
                     filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
                     switch (filterNet) {
                         case BANELCO:
@@ -207,8 +212,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             loadSpinnerBanks(linkBanks.get());
                             break;
                     }
-                } else {
-                    filterNet = null;
                 }
                 refreshAtms();
             }
