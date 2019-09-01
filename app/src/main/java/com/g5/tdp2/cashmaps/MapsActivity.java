@@ -92,7 +92,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
         }
 
-        loadSpinnerBanks();
+        loadSpinnerBanks(null);
         loadSpinnerNet();
         loadSpinnerRadio();
         loadAtms(new AtmRequest());
@@ -104,23 +104,68 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void loadBanks() {
         new BankFetchTask(bankGateway, linkBanks::set).execute(AtmNet.LINK);
         new BankFetchTask(bankGateway, banelcoBanks::set).execute(AtmNet.BANELCO);
+        new BankFetchTask(bankGateway, this::loadSpinnerBanks).execute(AtmNet.values());
     }
 
-    private void loadSpinnerBanks() {
-        spinnerBanks = (Spinner) findViewById(R.id.select_bank);
-        List<String> list = new ArrayList<String>();
-        list.add("Cualquier banco");
-        list.add("Banco Santander Río");
-        list.add("Banco Supervielle");
-        list.add("HSBC Bank Argentina");
-        list.add("BBVA Banco Francés");
-        list.add("Banco Galicia");
-        list.add("BANCO DE LA NACION ARGENTINA");
-        list.add("CABAL COOP. LTDA.");
-        list.add("BANCO DE LA CIUDAD DE BUENOS AIRES");
+    private void monitorConnection() {
+        registerReceiver(new ConnectionTask(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
 
+    /**
+     * Carga los cajeros en el campo atmsRef
+     *
+     * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
+     */
+    private void loadAtms(AtmRequest atmRequest) {
+        new AtmFetchTask(atmGateway, this::filterAndSetAtms)
+                .execute(atmRequest);
+    }
+
+    /**
+     * Aplica los filtros sobre los cajeros obtenidos y los setea en {@link MapsActivity#atmsRef}
+     *
+     * @param atms Atms obtenidos
+     */
+    private void filterAndSetAtms(List<Atm> atms) {
+        if (atms == null || atms.isEmpty()) return;
+        clearActualMarkers();
+        atmsRef.set(atms);
+        List<Atm> filteredAtms = Atm.filter(atms,filterNet, filterBank, currentLocation.getLatitude(), currentLocation.getLongitude(), filterRadio);
+        for (Atm atm : filteredAtms) {
+            Log.d("atm-list", atm.toString());
+            addAtmToMap(atm);
+        }
+    }
+
+    private void clearActualMarkers() {
+        for (Marker marker : bank_markers) {
+            marker.remove();
+        }
+        bank_markers.clear();
+    }
+
+    private void addAtmToMap(Atm atm) {
+        Optional.ofNullable(mMap).ifPresent(m -> {
+            LatLng latLngLocation = new LatLng(atm.getLat(), atm.getLon());
+            Marker newMarker = m.addMarker(new MarkerOptions().position(latLngLocation).title(atm.getBank() + "&" + atm.getAddress() + "&" + atm.getNet() + "&Terminales: " + atm.getTerms()));
+            bank_markers.add(newMarker);
+        });
+    }
+
+    private void launchMap() {
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    private void loadSpinnerBanks(List<String> banks) {
+        if (banks == null){
+            banks = new ArrayList<String>();
+        }
+        banks.add(0, "Cualquier banco");
+        spinnerBanks = (Spinner) findViewById(R.id.select_bank);
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, list);
+                android.R.layout.simple_spinner_item, banks);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerBanks.setAdapter(dataAdapter);
 
@@ -134,6 +179,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } else {
                     filterBank = null;
                 }
+                filterAndSetAtms(atmsRef.get());
             }
 
             @Override
@@ -145,12 +191,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void loadSpinnerNet() {
         spinnerNets = (Spinner) findViewById(R.id.select_net);
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         list.add("Cualquier red");
         list.add(AtmNet.BANELCO.toString());
         list.add(AtmNet.LINK.toString());
 
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, list);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerNets.setAdapter(dataAdapter);
@@ -160,6 +206,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
                 if (!selectedFilter.equals("Cualquier red")) {
                     filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
+                    //new BankFetchTask(bankGateway, loadSpinnerBanks).execute(AtmNet.values());
+                    if (selectedFilter.equals(AtmNet.BANELCO)) {
+                        loadSpinnerBanks(banelcoBanks.get());
+                    } else if (selectedFilter.equals(AtmNet.LINK)) {
+                        loadSpinnerBanks(linkBanks.get());
+                    }
                 } else {
                     filterNet = null;
                 }
@@ -190,6 +242,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("radio-selected", adapterView.getItemAtPosition(i).toString());
                 filterRadio = Integer.parseInt(adapterView.getItemAtPosition(i).toString());
+                filterAndSetAtms(atmsRef.get());
             }
 
             @Override
@@ -198,57 +251,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         spinnerRadio.setSelection(2);
-    }
-
-    private void monitorConnection() {
-        registerReceiver(new ConnectionTask(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-    }
-
-    /**
-     * Carga los cajeros en el campo atmsRef
-     *
-     * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
-     */
-    private void loadAtms(AtmRequest atmRequest) {
-        new AtmFetchTask(atmGateway, this::filterAndSetAtms)
-                .execute(atmRequest);
-    }
-
-    private void clearActualMarkers() {
-        for (Marker marker : bank_markers) {
-            marker.remove();
-        }
-        bank_markers.clear();
-    }
-
-    /**
-     * Aplica los filtros sobre los cajeros obtenidos y los setea en {@link MapsActivity#atmsRef}
-     *
-     * @param atms Atms obtenidos
-     */
-    private void filterAndSetAtms(List<Atm> atms) {
-        if (atms == null || atms.isEmpty()) return;
-        clearActualMarkers();
-        atmsRef.set(atms);
-        List<Atm> filteredAtms = Atm.filter(atms,filterNet, filterBank, currentLocation.getLatitude(), currentLocation.getLongitude(), filterRadio);
-        for (Atm atm : filteredAtms) {
-            Log.d("atm-list", atm.toString());
-            addAtmToMap(atm);
-        }
-    }
-
-    private void addAtmToMap(Atm atm) {
-        Optional.ofNullable(mMap).ifPresent(m -> {
-            LatLng latLngLocation = new LatLng(atm.getLat(), atm.getLon());
-            Marker newMarker = m.addMarker(new MarkerOptions().position(latLngLocation).title(atm.getBank() + "&" + atm.getAddress() + "&" + atm.getNet() + "&Terminales: " + atm.getTerms()));
-            bank_markers.add(newMarker);
-        });
-    }
-
-    private void launchMap() {
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
     }
 
     private boolean canAccessLocation() {

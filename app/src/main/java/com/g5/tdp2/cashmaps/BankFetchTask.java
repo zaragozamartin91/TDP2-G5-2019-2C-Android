@@ -1,6 +1,7 @@
 package com.g5.tdp2.cashmaps;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.domain.AtmNet;
@@ -24,6 +25,12 @@ public class BankFetchTask extends AsyncTask<AtmNet, Void, List<String>> {
 
     @Override
     protected List<String> doInBackground(AtmNet... atmNets) {
+        if (atmNets.length == 2) {
+            List<String> banks = bankGateway.getBanks(atmNets[0]);
+            banks.addAll(bankGateway.getBanks(atmNets[1]));
+            java.util.Collections.sort(banks);
+            return banks;
+        }
         return atmNets.length > 0 ? bankGateway.getBanks(atmNets[0]) : Collections.emptyList();
     }
 
