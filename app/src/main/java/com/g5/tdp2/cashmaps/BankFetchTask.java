@@ -1,0 +1,34 @@
+package com.g5.tdp2.cashmaps;
+
+import android.os.AsyncTask;
+
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
+import com.g5.tdp2.cashmaps.gateway.AtmGateway;
+import com.g5.tdp2.cashmaps.gateway.AtmRequest;
+import com.g5.tdp2.cashmaps.gateway.BankGateway;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+
+public class BankFetchTask extends AsyncTask<AtmNet, Void, List<String>> {
+    private BankGateway bankGateway;
+    private Consumer<List<String>> onSuccess;
+
+    public BankFetchTask(BankGateway bankGateway, Consumer<List<String>> onSuccess) {
+        this.bankGateway = bankGateway;
+        this.onSuccess = onSuccess;
+    }
+
+    @Override
+    protected List<String> doInBackground(AtmNet... atmNets) {
+        return atmNets.length > 0 ? bankGateway.getBanks(atmNets[0]) : Collections.emptyList();
+    }
+
+    @Override
+    protected void onPostExecute(List<String> banks) {
+        onSuccess.accept(banks);
+    }
+}

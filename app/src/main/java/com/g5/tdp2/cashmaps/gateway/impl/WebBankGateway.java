@@ -3,6 +3,7 @@ package com.g5.tdp2.cashmaps.gateway.impl;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g5.tdp2.cashmaps.domain.AtmBank;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
 import com.g5.tdp2.cashmaps.gateway.GatewayException;
 import com.g5.tdp2.cashmaps.gateway.BankGateway;
 
@@ -28,9 +29,15 @@ public class WebBankGateway implements BankGateway {
 
     @Override
     public List<String> getBanks() {
+        return getBanks(null);
+    }
+
+    @Override
+    public List<String> getBanks(AtmNet net) {
         HttpURLConnection connection = null;
+        String netQuery = Optional.ofNullable(net).map(n -> "?red=" + n).orElse("");
         try {
-            URL url = new URL(baseUrl + "/bancos");
+            URL url = new URL(baseUrl + "/bancos" + netQuery);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 

@@ -24,7 +24,10 @@ import com.g5.tdp2.cashmaps.domain.AtmDist;
 import com.g5.tdp2.cashmaps.domain.AtmNet;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
 import com.g5.tdp2.cashmaps.gateway.AtmRequest;
+import com.g5.tdp2.cashmaps.gateway.BankGateway;
 import com.g5.tdp2.cashmaps.gateway.impl.CacheAtmGateway;
+import com.g5.tdp2.cashmaps.gateway.impl.CacheBankGateway;
+import com.g5.tdp2.cashmaps.gateway.impl.WebBankGateway;
 import com.g5.tdp2.cashmaps.view.CustomInfoWindowAdapter;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -36,6 +39,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +61,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private AtmGateway atmGateway = new CacheAtmGateway();
     private AtomicReference<List<Atm>> atmsRef = new AtomicReference<>(); // contiene a los cajeros cargados
 
+    private BankGateway bankGateway = new CacheBankGateway(new WebBankGateway());
+    private AtomicReference<List<String>> linkBanks = new AtomicReference<>(Collections.emptyList());
+    private AtomicReference<List<String>> banelcoBanks = new AtomicReference<>(Collections.emptyList());
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +72,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (canAccessInternet()) {
             monitorConnection();
+            loadBanks();
         } else {
             requestPermissions(INTERNET_PERMS, INTERNET_REQUEST);
         }
@@ -78,6 +87,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         loadItemsIntoSpinnerNet();
         loadItemsIntoSpinnerRadio();
         loadAtms(new AtmRequest());
+    }
+
+    /**
+     * Carga los bancos disponibles por red de cajeros de forma asincronica en los campos linkBanks y banelcoBanks respectivamente
+     */
+    private void loadBanks() {
+        new BankFetchTask(bankGateway, linkBanks::set).execute(AtmNet.LINK);
+        new BankFetchTask(bankGateway, banelcoBanks::set).execute(AtmNet.BANELCO);
     }
 
     private void loadItemsIntoSpinnerBanks() {
@@ -113,10 +130,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void loadItemsIntoSpinnerRadio() {
         spinnerRadio = (Spinner) findViewById(R.id.select_radio);
         List<String> list = new ArrayList<String>();
-        list.add(""+AtmDist.R_100.radius);
-        list.add(""+AtmDist.R_200.radius);
-        list.add(""+AtmDist.R_500.radius);
-        list.add(""+AtmDist.R_1000.radius);
+        list.add("" + AtmDist.R_100.radius);
+        list.add("" + AtmDist.R_200.radius);
+        list.add("" + AtmDist.R_500.radius);
+        list.add("" + AtmDist.R_1000.radius);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, list);
@@ -147,7 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // TODO : llamar a los filtros de cajeros con los valores establecidos en la UI
 
         atmsRef.set(atms);
-        List<Atm> filteredAtms = Atm.filter(atms,AtmNet.BANELCO,"Banco Santander Río");
+        List<Atm> filteredAtms = Atm.filter(atms, AtmNet.BANELCO, "Banco Santander Río");
         for (Atm atm : filteredAtms) {
             Log.d("atm-list", atm.toString());
             addAtmToMap(atm);
@@ -219,6 +236,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case INTERNET_REQUEST:
                 if (canAccessInternet()) {
                     monitorConnection();
+                    loadBanks();
                 } else {
                     notAccessInternet();
                 }
@@ -231,8 +249,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             LatLng latLngLocation = new LatLng(location.getLatitude(), location.getLongitude());
             int height = 75;
             int width = 75;
-            BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.curr_loc);
-            Bitmap b=bitmapdraw.getBitmap();
+            BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.curr_loc);
+            Bitmap b = bitmapdraw.getBitmap();
             Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
             m.addMarker(
                     new MarkerOptions()
