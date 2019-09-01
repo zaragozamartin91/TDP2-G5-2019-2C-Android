@@ -10,4 +10,6 @@
     <string name="banks_prompt">Selecciona un Banco</string>
     <string name="net_prompt">Selecciona una Red</string>
     <string name="radio_prompt">Selecciona un Radio</string>
+    <string name="no_results">No existen resultados para el radio buscado, intente con un radio más grande.</string>
+    <string name="no_results_max_radio">No existen resultados para la búsqueda, muevase por la ciudad antes de volver a buscar.</string>
 </resources>

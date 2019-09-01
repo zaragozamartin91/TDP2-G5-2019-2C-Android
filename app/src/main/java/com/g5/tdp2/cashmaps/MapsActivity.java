@@ -98,8 +98,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         findViewById(R.id.select_bank).setEnabled(false);
-        loadSpinnerNet();
         loadSpinnerRadio();
+        loadSpinnerNet();
         searchButton = findViewById(R.id.search_button);
         searchButton.setOnClickListener(view -> refreshAtms());
     }
@@ -135,6 +135,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         List<Atm> atms = Optional.ofNullable(atmsRef.get()).orElse(new ArrayList<>());
         List<Atm> filteredAtms = Atm.filter(atms, filterNet, filterBank, currentLocation.get().getLatitude(), currentLocation.get().getLongitude(), filterRadio);
         filteredAtms.forEach(this::addAtmToMap);
+        if (filteredAtms.size() == 0) {
+            if(filterRadio < AtmDist.R_1000.radius) {
+                Toast.makeText(this, R.string.no_results, Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, R.string.no_results_max_radio, Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     private void clearActualMarkers() {
@@ -171,7 +178,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
                 filterBank = selectedFilter.equals("Cualquier banco") ? null : adapterView.getItemAtPosition(i).toString();
-                refreshAtms();
+                // refreshAtms();
             }
 
             @Override
@@ -214,7 +221,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             break;
                     }
                 }
-                refreshAtms();
+                // refreshAtms();
             }
 
             @Override
@@ -240,7 +247,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("radio-selected", adapterView.getItemAtPosition(i).toString());
                 filterRadio = Integer.parseInt(adapterView.getItemAtPosition(i).toString());
-                refreshAtms();
+                // refreshAtms();
             }
 
             @Override
