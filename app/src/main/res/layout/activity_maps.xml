@@ -14,18 +14,21 @@
             android:id="@+id/select_bank"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
             android:prompt="@string/banks_prompt" >
         </Spinner>
         <Spinner
             android:id="@+id/select_net"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
             android:prompt="@string/net_prompt" >
         </Spinner>
         <Spinner
             android:id="@+id/select_radio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
             android:prompt="@string/radio_prompt" >
         </Spinner>
     </LinearLayout>

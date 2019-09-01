@@ -7,7 +7,7 @@
     <string name="init_conn_error_msg">No tienes conexión a Internet. Por favor active el Wifi o los datos moviles y vuelva a intentarlo</string>
     <string name="init_conn_error_title">Error de conexión</string>
     <string name="init_conn_error_close">Cerrar</string>
-    <string name="banks_prompt">Banco</string>
-    <string name="net_prompt">Red</string>
-    <string name="radio_prompt">Radio</string>
+    <string name="banks_prompt">Selecciona un Banco</string>
+    <string name="net_prompt">Selecciona una Red</string>
+    <string name="radio_prompt">Selecciona un Radio</string>
 </resources>
