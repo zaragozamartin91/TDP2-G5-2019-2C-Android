@@ -15,6 +15,8 @@ import android.os.Bundle;
 
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -33,6 +35,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
@@ -56,6 +59,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private AtmGateway atmGateway = new CacheAtmGateway();
     private AtomicReference<List<Atm>> atmsRef = new AtomicReference<>(); // contiene a los cajeros cargados
+    private List<Marker> bank_markers = new ArrayList<>();
+
+    private String filterBank = null;
+    private AtmNet filterNet = null;
+    private double filterRadio = AtmDist.R_500.radius;
+    private Location currentLocation = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,15 +83,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
         }
 
-        loadItemsIntoSpinnerBanks();
-        loadItemsIntoSpinnerNet();
-        loadItemsIntoSpinnerRadio();
+        loadSpinnerBanks();
+        loadSpinnerNet();
+        loadSpinnerRadio();
         loadAtms(new AtmRequest());
     }
 
-    private void loadItemsIntoSpinnerBanks() {
+    private void loadSpinnerBanks() {
         spinnerBanks = (Spinner) findViewById(R.id.select_bank);
         List<String> list = new ArrayList<String>();
+        list.add("Cualquier banco");
         list.add("Banco Santander Río");
         list.add("Banco Supervielle");
         list.add("HSBC Bank Argentina");
@@ -96,11 +106,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 android.R.layout.simple_spinner_item, list);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerBanks.setAdapter(dataAdapter);
+
+        spinnerBanks.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
+                String selectedFilter = adapterView.getItemAtPosition(i).toString();
+                if (!selectedFilter.equals("Cualquier banco")) {
+                    filterBank = adapterView.getItemAtPosition(i).toString();
+                } else {
+                    filterBank = null;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
-    private void loadItemsIntoSpinnerNet() {
+    private void loadSpinnerNet() {
         spinnerNets = (Spinner) findViewById(R.id.select_net);
         List<String> list = new ArrayList<String>();
+        list.add("Cualquier red");
         list.add(AtmNet.BANELCO.toString());
         list.add(AtmNet.LINK.toString());
 
@@ -108,9 +137,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 android.R.layout.simple_spinner_item, list);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerNets.setAdapter(dataAdapter);
+        spinnerNets.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                String selectedFilter = adapterView.getItemAtPosition(i).toString();
+                if (!selectedFilter.equals("Cualquier red")) {
+                    filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
+                } else {
+                    filterNet = null;
+                }
+                filterAndSetAtms(atmsRef.get());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
-    private void loadItemsIntoSpinnerRadio() {
+    private void loadSpinnerRadio() {
         spinnerRadio = (Spinner) findViewById(R.id.select_radio);
         List<String> list = new ArrayList<String>();
         list.add(""+AtmDist.R_100.radius);
@@ -122,6 +168,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 android.R.layout.simple_spinner_item, list);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRadio.setAdapter(dataAdapter);
+        spinnerRadio.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                Log.d("radio-selected", adapterView.getItemAtPosition(i).toString());
+                filterRadio = Integer.parseInt(adapterView.getItemAtPosition(i).toString());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+        spinnerRadio.setSelection(2);
     }
 
     private void monitorConnection() {
@@ -138,16 +197,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .execute(atmRequest);
     }
 
+    private void clearActualMarkers() {
+        for (Marker marker : bank_markers) {
+            marker.remove();
+        }
+        bank_markers.clear();
+    }
+
     /**
      * Aplica los filtros sobre los cajeros obtenidos y los setea en {@link MapsActivity#atmsRef}
      *
      * @param atms Atms obtenidos
      */
     private void filterAndSetAtms(List<Atm> atms) {
-        // TODO : llamar a los filtros de cajeros con los valores establecidos en la UI
-
+        if (atms == null || atms.isEmpty()) return;
+        clearActualMarkers();
         atmsRef.set(atms);
-        List<Atm> filteredAtms = Atm.filter(atms,AtmNet.BANELCO,"Banco Santander Río");
+        List<Atm> filteredAtms = Atm.filter(atms,filterNet, filterBank, currentLocation.getLatitude(), currentLocation.getLongitude(), filterRadio);
         for (Atm atm : filteredAtms) {
             Log.d("atm-list", atm.toString());
             addAtmToMap(atm);
@@ -157,7 +223,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void addAtmToMap(Atm atm) {
         Optional.ofNullable(mMap).ifPresent(m -> {
             LatLng latLngLocation = new LatLng(atm.getLat(), atm.getLon());
-            m.addMarker(new MarkerOptions().position(latLngLocation).title(atm.getBank() + "&" + atm.getAddress() + "&" + atm.getNet() + "&Terminales: " + atm.getTerms()));
+            Marker newMarker = m.addMarker(new MarkerOptions().position(latLngLocation).title(atm.getBank() + "&" + atm.getAddress() + "&" + atm.getNet() + "&Terminales: " + atm.getTerms()));
+            bank_markers.add(newMarker);
         });
     }
 
@@ -231,7 +298,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             LatLng latLngLocation = new LatLng(location.getLatitude(), location.getLongitude());
             int height = 75;
             int width = 75;
-            BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.curr_loc);
+            BitmapDrawable bitmapdraw = (BitmapDrawable)getResources().getDrawable(R.drawable.curr_loc);
             Bitmap b=bitmapdraw.getBitmap();
             Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
             m.addMarker(
@@ -272,6 +339,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (location.isPresent()) {
                 Log.d("location-get", "NOT NULL");
+                currentLocation = location.get();
                 centerAndMarkLocation(location.get());
             } else {
                 Log.d("location-get", "NULL");
