@@ -26,7 +26,8 @@ public class BankFetchTask extends AsyncTask<AtmNet, Void, List<String>> {
     @Override
     protected List<String> doInBackground(AtmNet... atmNets) {
         if (atmNets.length == 2) {
-            List<String> banks = bankGateway.getBanks(atmNets[0]);
+            List<String> banks = new ArrayList<>();
+            banks.addAll(bankGateway.getBanks(atmNets[0]));
             banks.addAll(bankGateway.getBanks(atmNets[1]));
             java.util.Collections.sort(banks);
             return banks;

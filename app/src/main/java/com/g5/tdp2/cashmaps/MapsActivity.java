@@ -159,13 +159,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void loadSpinnerBanks(List<String> banks) {
-        if (banks == null){
-            banks = new ArrayList<String>();
+        ArrayList<String> spinnerOptions = new ArrayList<>();
+        spinnerOptions.add(0, "Cualquier banco");
+        if (banks != null){
+            spinnerOptions.addAll(banks);
         }
-        banks.add(0, "Cualquier banco");
+
         spinnerBanks = (Spinner) findViewById(R.id.select_bank);
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, banks);
+                android.R.layout.simple_spinner_item, spinnerOptions);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerBanks.setAdapter(dataAdapter);
 
@@ -204,17 +206,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
+                List<String> banksByNet = new ArrayList<>();
+
                 if (!selectedFilter.equals("Cualquier red")) {
                     filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
-                    //new BankFetchTask(bankGateway, loadSpinnerBanks).execute(AtmNet.values());
-                    if (selectedFilter.equals(AtmNet.BANELCO)) {
-                        loadSpinnerBanks(banelcoBanks.get());
-                    } else if (selectedFilter.equals(AtmNet.LINK)) {
-                        loadSpinnerBanks(linkBanks.get());
+
+                    if (selectedFilter.equals(AtmNet.BANELCO.toString())) {
+                        banksByNet.addAll(banelcoBanks.get());
+                    } else if (selectedFilter.equals(AtmNet.LINK.toString())) {
+                        banksByNet.addAll(linkBanks.get());
                     }
                 } else {
                     filterNet = null;
+                    banksByNet.addAll(banelcoBanks.get());
+                    banksByNet.addAll(linkBanks.get());
                 }
+                java.util.Collections.sort(banksByNet);
+                loadSpinnerBanks(banksByNet);
                 filterAndSetAtms(atmsRef.get());
             }
 
