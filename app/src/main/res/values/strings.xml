@@ -2,8 +2,11 @@
     <string name="app_name">TDP2-G5-2019-2C-Android</string>
     <string name="title_activity_maps">Map</string>
     <string name="no_access_location">Es necesario geolocalizar para continuar</string>
-    <string name="no_access_internet">Se necesita conectividad para seguir operando</string>
+    <string name="no_access_internet">Se perdió la conexión a Internet. Por favor active el Wifi o los datos moviles y vuelva a intentarlo</string>
     <string name="internet_recover">Se recupero la conectividad</string>
+    <string name="init_conn_error_msg">No tienes conexión a Internet. Por favor active el Wifi o los datos moviles y vuelva a intentarlo</string>
+    <string name="init_conn_error_title">Error de conexión</string>
+    <string name="init_conn_error_close">Cerrar</string>
     <string name="banks_prompt">Banco</string>
     <string name="net_prompt">Red</string>
     <string name="radio_prompt">Radio</string>
