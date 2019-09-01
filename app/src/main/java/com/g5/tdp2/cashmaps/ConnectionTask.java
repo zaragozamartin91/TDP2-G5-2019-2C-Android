@@ -20,12 +20,20 @@ public class ConnectionTask extends BroadcastReceiver {
     private AtomicBoolean firstRcv = new AtomicBoolean(true); // switch de "primer cambio de estado"
     private AtomicBoolean connOk = new AtomicBoolean(true);
 
+    private Runnable onConnectionOk;
+
+    public ConnectionTask(Runnable onConnectionOk) {
+        this.onConnectionOk = onConnectionOk;
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         boolean isConnected = Optional.ofNullable(cm.getActiveNetworkInfo())
                 .map(NetworkInfo::isConnectedOrConnecting)
                 .orElse(false);
+
+        if (isConnected) onConnectionOk.run();
 
         if (!isConnected) {
             handleNoConnection(context);
@@ -40,11 +48,11 @@ public class ConnectionTask extends BroadcastReceiver {
     private void handleNoConnection(Context context) {
         if (firstRcv.compareAndSet(true, false)) {
             // si no tengo conexion y es la primera interaccion de la app -> muestro dialogo con boton de cierre
+            context.unregisterReceiver(ConnectionTask.this);
             new AlertDialog.Builder(context)
                     .setTitle(R.string.init_conn_error_title)
                     .setMessage(R.string.init_conn_error_msg)
                     .setPositiveButton(R.string.init_conn_error_close, (dialog, which) -> {
-                        context.unregisterReceiver(ConnectionTask.this);
                         ((Activity) context).finish();
                     })
                     .setCancelable(false)

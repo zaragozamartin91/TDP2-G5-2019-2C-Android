@@ -2,6 +2,7 @@ package com.g5.tdp2.cashmaps;
 
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.domain.AtmNet;
@@ -25,14 +26,19 @@ public class BankFetchTask extends AsyncTask<AtmNet, Void, List<String>> {
 
     @Override
     protected List<String> doInBackground(AtmNet... atmNets) {
-        if (atmNets.length == 2) {
-            List<String> banks = new ArrayList<>();
-            banks.addAll(bankGateway.getBanks(atmNets[0]));
-            banks.addAll(bankGateway.getBanks(atmNets[1]));
-            java.util.Collections.sort(banks);
-            return banks;
+        try {
+            if (atmNets.length == 2) {
+                List<String> banks = new ArrayList<>();
+                banks.addAll(bankGateway.getBanks(atmNets[0]));
+                banks.addAll(bankGateway.getBanks(atmNets[1]));
+                Collections.sort(banks);
+                return banks;
+            }
+            return atmNets.length > 0 ? bankGateway.getBanks(atmNets[0]) : Collections.emptyList();
+        } catch (Exception e) {
+            Log.e("bank-error", "Conexion interrumpida", e);
+            return Collections.emptyList();
         }
-        return atmNets.length > 0 ? bankGateway.getBanks(atmNets[0]) : Collections.emptyList();
     }
 
     @Override

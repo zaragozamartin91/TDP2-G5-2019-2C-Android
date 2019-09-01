@@ -51,6 +51,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+    public static final List<String> NO_BANKS = Collections.emptyList();
+    public static final List<Atm> NO_ATMS = Collections.emptyList();
 
     private GoogleMap mMap;
     private Spinner spinnerBanks, spinnerNets, spinnerRadio;
@@ -66,7 +68,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int INTERNET_REQUEST = 1319;
 
     private AtmGateway atmGateway = new CacheAtmGateway();
-    private AtomicReference<List<Atm>> atmsRef = new AtomicReference<>(); // contiene a los cajeros cargados
+    private AtomicReference<List<Atm>> atmsRef = new AtomicReference<>(NO_ATMS); // contiene a los cajeros cargados
     private List<Marker> bank_markers = new ArrayList<>();
 
     private String filterBank = null;
@@ -75,27 +77,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private AtomicReference<Location> currentLocation = new AtomicReference<>();
 
     private BankGateway bankGateway = new CacheBankGateway(new WebBankGateway());
-    private AtomicReference<List<String>> linkBanks = new AtomicReference<>(Collections.emptyList());
-    private AtomicReference<List<String>> banelcoBanks = new AtomicReference<>(Collections.emptyList());
+    private AtomicReference<List<String>> linkBanks = new AtomicReference<>(NO_BANKS);
+    private AtomicReference<List<String>> banelcoBanks = new AtomicReference<>(NO_BANKS);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        if (canAccessInternet()) {
-            monitorConnection();
-            loadBanks();
-            loadAtms(new AtmRequest());
-        } else {
-            requestPermissions(INTERNET_PERMS, INTERNET_REQUEST);
-        }
+        if (canAccessInternet()) monitorConnection();
+        else requestPermissions(INTERNET_PERMS, INTERNET_REQUEST);
 
-        if (canAccessLocation()) {
-            launchMap();
-        } else {
-            requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
-        }
+        if (canAccessLocation()) launchMap();
+        else requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
 
         findViewById(R.id.select_bank).setEnabled(false);
         loadSpinnerRadio();
@@ -108,12 +102,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Carga los bancos disponibles por red de cajeros de forma asincronica en los campos linkBanks y banelcoBanks respectivamente
      */
     private void loadBanks() {
-        new BankFetchTask(bankGateway, linkBanks::set).execute(AtmNet.LINK);
-        new BankFetchTask(bankGateway, banelcoBanks::set).execute(AtmNet.BANELCO);
+        new BankFetchTask(bankGateway, b -> linkBanks.compareAndSet(NO_BANKS, b)).execute(AtmNet.LINK);
+        new BankFetchTask(bankGateway, b -> banelcoBanks.compareAndSet(NO_BANKS, b)).execute(AtmNet.BANELCO);
     }
 
     private void monitorConnection() {
-        registerReceiver(new ConnectionTask(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        registerReceiver(
+                new ConnectionTask(() -> {
+                    loadBanks();
+                    loadAtms(new AtmRequest());
+                }),
+                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        );
     }
 
     /**
@@ -122,10 +122,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
      */
     private void loadAtms(AtmRequest atmRequest) {
-        new AtmFetchTask(atmGateway, atms -> {
-            atmsRef.set(atms);
-
-        }).execute(atmRequest);
+        new AtmFetchTask(atmGateway, atms -> atmsRef.compareAndSet(NO_ATMS, atms)).execute(atmRequest);
     }
 
 
@@ -136,7 +133,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         List<Atm> filteredAtms = Atm.filter(atms, filterNet, filterBank, currentLocation.get().getLatitude(), currentLocation.get().getLongitude(), filterRadio);
         filteredAtms.forEach(this::addAtmToMap);
         if (filteredAtms.size() == 0) {
-            if(filterRadio < AtmDist.R_1000.radius) {
+            if (filterRadio < AtmDist.R_1000.radius) {
                 Toast.makeText(this, R.string.no_results, Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, R.string.no_results_max_radio, Toast.LENGTH_LONG).show();
@@ -311,8 +308,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case INTERNET_REQUEST:
                 if (canAccessInternet()) {
                     monitorConnection();
-                    loadBanks();
-                    loadAtms(new AtmRequest());
                 } else {
                     notAccessInternet();
                 }
