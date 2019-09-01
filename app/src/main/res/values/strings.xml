@@ -2,4 +2,6 @@
     <string name="app_name">TDP2-G5-2019-2C-Android</string>
     <string name="title_activity_maps">Map</string>
     <string name="no_access_location">Es necesario geolocalizar para continuar</string>
+    <string name="no_access_internet">Se necesita conectividad para seguir operando</string>
+    <string name="internet_recover">Se recupero la conectividad</string>
 </resources>
