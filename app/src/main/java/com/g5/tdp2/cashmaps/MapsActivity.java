@@ -63,8 +63,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void monitorConnection() {
-        registerReceiver(new ConnectionTask(this),
-                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        registerReceiver(new ConnectionTask(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     /**
