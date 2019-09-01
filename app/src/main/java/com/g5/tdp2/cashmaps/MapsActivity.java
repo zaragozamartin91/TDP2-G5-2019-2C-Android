@@ -42,6 +42,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +69,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private String filterBank = null;
     private AtmNet filterNet = null;
     private double filterRadio = AtmDist.R_500.radius;
-    private Location currentLocation = null;
+    private AtomicReference<Location> currentLocation = new AtomicReference<>();
 
     private BankGateway bankGateway = new CacheBankGateway(new WebBankGateway());
     private AtomicReference<List<String>> linkBanks = new AtomicReference<>(Collections.emptyList());
@@ -82,6 +83,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (canAccessInternet()) {
             monitorConnection();
             loadBanks();
+            loadAtms(new AtmRequest());
         } else {
             requestPermissions(INTERNET_PERMS, INTERNET_REQUEST);
         }
@@ -92,10 +94,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
         }
 
-        loadSpinnerBanks(null);
+        findViewById(R.id.select_bank).setEnabled(false);
         loadSpinnerNet();
         loadSpinnerRadio();
-        loadAtms(new AtmRequest());
     }
 
     /**
@@ -104,7 +105,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void loadBanks() {
         new BankFetchTask(bankGateway, linkBanks::set).execute(AtmNet.LINK);
         new BankFetchTask(bankGateway, banelcoBanks::set).execute(AtmNet.BANELCO);
-        new BankFetchTask(bankGateway, this::loadSpinnerBanks).execute(AtmNet.values());
     }
 
     private void monitorConnection() {
@@ -117,30 +117,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
      */
     private void loadAtms(AtmRequest atmRequest) {
-        new AtmFetchTask(atmGateway, this::filterAndSetAtms)
-                .execute(atmRequest);
+        new AtmFetchTask(atmGateway, atms -> {
+            atmsRef.set(atms);
+
+        }).execute(atmRequest);
     }
 
-    /**
-     * Aplica los filtros sobre los cajeros obtenidos y los setea en {@link MapsActivity#atmsRef}
-     *
-     * @param atms Atms obtenidos
-     */
-    private void filterAndSetAtms(List<Atm> atms) {
-        if (atms == null || atms.isEmpty()) return;
+
+    private void refreshAtms() {
         clearActualMarkers();
-        atmsRef.set(atms);
-        List<Atm> filteredAtms = Atm.filter(atms,filterNet, filterBank, currentLocation.getLatitude(), currentLocation.getLongitude(), filterRadio);
-        for (Atm atm : filteredAtms) {
-            Log.d("atm-list", atm.toString());
-            addAtmToMap(atm);
-        }
+        if (currentLocation.get() == null) return; // current location not ready
+        List<Atm> atms = Optional.ofNullable(atmsRef.get()).orElse(new ArrayList<>());
+        List<Atm> filteredAtms = Atm.filter(atms, filterNet, filterBank, currentLocation.get().getLatitude(), currentLocation.get().getLongitude(), filterRadio);
+        filteredAtms.forEach(this::addAtmToMap);
     }
 
     private void clearActualMarkers() {
-        for (Marker marker : bank_markers) {
-            marker.remove();
-        }
+        bank_markers.forEach(Marker::remove);
         bank_markers.clear();
     }
 
@@ -159,11 +152,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void loadSpinnerBanks(List<String> banks) {
-        if (banks == null){
+        if (banks == null) {
             banks = new ArrayList<String>();
         }
         banks.add(0, "Cualquier banco");
         spinnerBanks = (Spinner) findViewById(R.id.select_bank);
+        spinnerBanks.setEnabled(true);
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, banks);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -179,7 +173,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } else {
                     filterBank = null;
                 }
-                filterAndSetAtms(atmsRef.get());
+                refreshAtms();
             }
 
             @Override
@@ -190,14 +184,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void loadSpinnerNet() {
-        spinnerNets = (Spinner) findViewById(R.id.select_net);
-        List<String> list = new ArrayList<>();
-        list.add("Cualquier red");
-        list.add(AtmNet.BANELCO.toString());
-        list.add(AtmNet.LINK.toString());
+        spinnerNets = findViewById(R.id.select_net);
 
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, list);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                Arrays.asList("Cualquier red", AtmNet.BANELCO.toString(), AtmNet.LINK.toString())
+        );
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerNets.setAdapter(dataAdapter);
         spinnerNets.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -206,16 +199,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String selectedFilter = adapterView.getItemAtPosition(i).toString();
                 if (!selectedFilter.equals("Cualquier red")) {
                     filterNet = AtmNet.fromString(adapterView.getItemAtPosition(i).toString());
-                    //new BankFetchTask(bankGateway, loadSpinnerBanks).execute(AtmNet.values());
-                    if (selectedFilter.equals(AtmNet.BANELCO)) {
-                        loadSpinnerBanks(banelcoBanks.get());
-                    } else if (selectedFilter.equals(AtmNet.LINK)) {
-                        loadSpinnerBanks(linkBanks.get());
+                    switch (filterNet) {
+                        case BANELCO:
+                            loadSpinnerBanks(banelcoBanks.get());
+                            break;
+                        case LINK:
+                            loadSpinnerBanks(linkBanks.get());
+                            break;
                     }
                 } else {
                     filterNet = null;
                 }
-                filterAndSetAtms(atmsRef.get());
+                refreshAtms();
             }
 
             @Override
@@ -226,15 +221,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void loadSpinnerRadio() {
-        spinnerRadio = (Spinner) findViewById(R.id.select_radio);
-        List<String> list = new ArrayList<String>();
+        spinnerRadio = findViewById(R.id.select_radio);
+        List<String> list = new ArrayList<>();
         list.add("" + AtmDist.R_100.radius);
         list.add("" + AtmDist.R_200.radius);
         list.add("" + AtmDist.R_500.radius);
         list.add("" + AtmDist.R_1000.radius);
 
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, list);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, list);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRadio.setAdapter(dataAdapter);
         spinnerRadio.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -242,7 +236,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("radio-selected", adapterView.getItemAtPosition(i).toString());
                 filterRadio = Integer.parseInt(adapterView.getItemAtPosition(i).toString());
-                filterAndSetAtms(atmsRef.get());
+                refreshAtms();
             }
 
             @Override
@@ -306,6 +300,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (canAccessInternet()) {
                     monitorConnection();
                     loadBanks();
+                    loadAtms(new AtmRequest());
                 } else {
                     notAccessInternet();
                 }
@@ -359,7 +354,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (location.isPresent()) {
                 Log.d("location-get", "NOT NULL");
-                currentLocation = location.get();
+                currentLocation.set(location.get());
                 centerAndMarkLocation(location.get());
             } else {
                 Log.d("location-get", "NULL");
