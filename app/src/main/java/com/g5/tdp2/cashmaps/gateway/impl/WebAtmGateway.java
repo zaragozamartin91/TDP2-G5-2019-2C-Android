@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
+import com.g5.tdp2.cashmaps.gateway.AtmRequest;
 import com.g5.tdp2.cashmaps.gateway.GatewayException;
 
 import java.io.BufferedReader;
@@ -30,7 +31,7 @@ public class WebAtmGateway implements AtmGateway {
     }
 
     @Override
-    public List<Atm> getAtms(Request request) throws GatewayException {
+    public List<Atm> getAtms(AtmRequest request) throws GatewayException {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(buildRequestUrl(request));
@@ -50,7 +51,7 @@ public class WebAtmGateway implements AtmGateway {
         }
     }
 
-    private String buildRequestUrl(Request request) {
+    private String buildRequestUrl(AtmRequest request) {
         String url = baseUrl + "/atms";
         return request.net == null ? url : // si no se indica la red, se solicitan todos los ATMs
                 request.bank == null ? url + "?red=" + request.net : // si se indica la red pero no el banco, se filtra solo por red

@@ -3,15 +3,21 @@ package com.g5.tdp2.cashmaps;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 
 import android.util.Log;
 import android.widget.Toast;
 
+import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.gateway.AtmGateway;
+import com.g5.tdp2.cashmaps.gateway.AtmRequest;
+import com.g5.tdp2.cashmaps.gateway.impl.CacheAtmGateway;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -19,7 +25,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
@@ -27,19 +35,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String[] INITIAL_PERMS = {
             Manifest.permission.ACCESS_FINE_LOCATION
     };
-    private static final int INITIAL_REQUEST = 1337;
-    private static final int LOCATION_REQUEST = INITIAL_REQUEST;
+    public static final String[] INTERNET_PERMS = {
+            Manifest.permission.INTERNET, Manifest.permission.ACCESS_NETWORK_STATE
+    };
+    private static final int LOCATION_REQUEST = 1307;
+    private static final int INTERNET_REQUEST = 1319;
+
+    private AtmGateway atmGateway = new CacheAtmGateway();
+    private AtomicReference<List<Atm>> atmsRef = new AtomicReference<>(); // contiene a los cajeros cargados
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        if (canAccessInternet()) {
+            monitorConnection();
+        } else {
+            requestPermissions(INTERNET_PERMS, INTERNET_REQUEST);
+        }
+
         if (canAccessLocation()) {
             launchMap();
         } else {
-            requestPermissions(INITIAL_PERMS, INITIAL_REQUEST);
+            requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
         }
+    }
+
+    private void monitorConnection() {
+        registerReceiver(new ConnectionTask(this),
+                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
+
+    /**
+     * Carga los cajeros en el campo atmsRef
+     *
+     * @param atmRequest Filtros a aplicar. new AtmRequest() implica 'ningun filtro'
+     */
+    private void loadAtms(AtmRequest atmRequest) {
+        new AtmFetchTask(atmGateway, this::filterAndSetAtms)
+                .execute(atmRequest);
+    }
+
+    /**
+     * Aplica los filtros sobre los cajeros obtenidos y los setea en {@link MapsActivity#atmsRef}
+     *
+     * @param atms Atms obtenidos
+     */
+    private void filterAndSetAtms(List<Atm> atms) {
+        // TODO : llamar a los filtros de cajeros con los valores establecidos en la UI
+        atmsRef.set(atms);
     }
 
     private void launchMap() {
@@ -52,12 +97,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
+    private boolean canAccessInternet() {
+        return hasPermission(Manifest.permission.INTERNET) && hasPermission(Manifest.permission.ACCESS_NETWORK_STATE);
+    }
+
     private boolean hasPermission(String perm) {
         return PackageManager.PERMISSION_GRANTED == checkSelfPermission(perm);
     }
 
     private void notAccessLocation() {
         Toast.makeText(this, R.string.no_access_location, Toast.LENGTH_LONG).show();
+        finish();
+    }
+
+    private void notAccessInternet() {
+        Toast.makeText(this, R.string.no_access_internet, Toast.LENGTH_LONG).show();
         finish();
     }
 
@@ -80,12 +134,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == LOCATION_REQUEST) {
-            if (canAccessLocation()) {
-                launchMap();
-            } else {
-                notAccessLocation();
-            }
+        switch (requestCode) {
+            case LOCATION_REQUEST:
+                if (canAccessLocation()) {
+                    launchMap();
+                } else {
+                    notAccessLocation();
+                }
+                break;
+            case INTERNET_REQUEST:
+                if (canAccessInternet()) {
+                    monitorConnection();
+                } else {
+                    notAccessInternet();
+                }
+                break;
         }
     }
 

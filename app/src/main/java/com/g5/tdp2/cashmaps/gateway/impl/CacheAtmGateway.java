@@ -2,6 +2,7 @@ package com.g5.tdp2.cashmaps.gateway.impl;
 
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
+import com.g5.tdp2.cashmaps.gateway.AtmRequest;
 import com.g5.tdp2.cashmaps.gateway.GatewayException;
 
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class CacheAtmGateway implements AtmGateway {
     }
 
     @Override
-    public List<Atm> getAtms(Request request) throws GatewayException {
+    public List<Atm> getAtms(AtmRequest request) throws GatewayException {
         String key = request.toString();
         atmMap.putIfAbsent(
                 key,

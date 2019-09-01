@@ -3,6 +3,7 @@ package com.g5.tdp2.cashmaps.gateway.impl;
 import com.g5.tdp2.cashmaps.domain.Atm;
 import com.g5.tdp2.cashmaps.domain.AtmNet;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
+import com.g5.tdp2.cashmaps.gateway.AtmRequest;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,7 +20,7 @@ public class WebAtmGatewayTest {
     public void getAtms() {
         String bank = "BBVA Banco Francés";
         AtmNet net = AtmNet.fromString("BANELCO");
-        List<Atm> atms = atmGateway.getAtms(new AtmGateway.Request(net, bank));
+        List<Atm> atms = atmGateway.getAtms(new AtmRequest(net, bank));
 
         System.out.println(atms);
 
