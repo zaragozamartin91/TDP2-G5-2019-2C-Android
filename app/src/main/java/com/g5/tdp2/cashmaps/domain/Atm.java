@@ -131,6 +131,23 @@ public class Atm {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Filtra todos los cajeros de una red y radio especificados
+     *
+     * @param atms   Lista de atms
+     * @param net    Red
+     * @param myLat  Mi latitud
+     * @param myLon  Mi longitud
+     * @param radius Radio
+     * @return Lista con cajeros que cumplen con los criterios definidos
+     */
+    public static List<Atm> filter(List<Atm> atms, AtmNet net, double myLat, double myLon, double radius) {
+        return atms.stream()
+                .filter(a -> net.equals(a.net))
+                .filter(a -> a.withinDist(myLat, myLon, radius))
+                .collect(Collectors.toList());
+    }
+
     @Override
     public String toString() {
         return "Atm{" +
