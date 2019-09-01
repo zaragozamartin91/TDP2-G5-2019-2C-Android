@@ -4,4 +4,7 @@
     <string name="no_access_location">Es necesario geolocalizar para continuar</string>
     <string name="no_access_internet">Se necesita conectividad para seguir operando</string>
     <string name="internet_recover">Se recupero la conectividad</string>
+    <string name="banks_prompt">Banco</string>
+    <string name="net_prompt">Red</string>
+    <string name="radio_prompt">Radio</string>
 </resources>

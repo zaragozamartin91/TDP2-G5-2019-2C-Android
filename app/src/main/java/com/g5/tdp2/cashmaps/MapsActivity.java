@@ -5,6 +5,8 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -12,19 +14,28 @@ import android.net.ConnectivityManager;
 import android.os.Bundle;
 
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.g5.tdp2.cashmaps.domain.Atm;
+import com.g5.tdp2.cashmaps.domain.AtmDist;
+import com.g5.tdp2.cashmaps.domain.AtmNet;
 import com.g5.tdp2.cashmaps.gateway.AtmGateway;
 import com.g5.tdp2.cashmaps.gateway.AtmRequest;
 import com.g5.tdp2.cashmaps.gateway.impl.CacheAtmGateway;
+import com.g5.tdp2.cashmaps.view.CustomInfoWindowAdapter;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +43,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
+    private Spinner spinnerBanks, spinnerNets, spinnerRadio;
+
     private static final String[] INITIAL_PERMS = {
             Manifest.permission.ACCESS_FINE_LOCATION
     };
@@ -60,6 +73,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             requestPermissions(INITIAL_PERMS, LOCATION_REQUEST);
         }
+
+        loadItemsIntoSpinnerBanks();
+        loadItemsIntoSpinnerNet();
+        loadItemsIntoSpinnerRadio();
+        loadAtms(new AtmRequest());
+    }
+
+    private void loadItemsIntoSpinnerBanks() {
+        spinnerBanks = (Spinner) findViewById(R.id.select_bank);
+        List<String> list = new ArrayList<String>();
+        list.add("Banco Santander Río");
+        list.add("Banco Supervielle");
+        list.add("HSBC Bank Argentina");
+        list.add("BBVA Banco Francés");
+        list.add("Banco Galicia");
+        list.add("BANCO DE LA NACION ARGENTINA");
+        list.add("CABAL COOP. LTDA.");
+        list.add("BANCO DE LA CIUDAD DE BUENOS AIRES");
+
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, list);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBanks.setAdapter(dataAdapter);
+    }
+
+    private void loadItemsIntoSpinnerNet() {
+        spinnerNets = (Spinner) findViewById(R.id.select_net);
+        List<String> list = new ArrayList<String>();
+        list.add(AtmNet.BANELCO.toString());
+        list.add(AtmNet.LINK.toString());
+
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, list);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerNets.setAdapter(dataAdapter);
+    }
+
+    private void loadItemsIntoSpinnerRadio() {
+        spinnerRadio = (Spinner) findViewById(R.id.select_radio);
+        List<String> list = new ArrayList<String>();
+        list.add(""+AtmDist.R_100.radius);
+        list.add(""+AtmDist.R_200.radius);
+        list.add(""+AtmDist.R_500.radius);
+        list.add(""+AtmDist.R_1000.radius);
+
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, list);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerRadio.setAdapter(dataAdapter);
     }
 
     private void monitorConnection() {
@@ -84,7 +146,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void filterAndSetAtms(List<Atm> atms) {
         // TODO : llamar a los filtros de cajeros con los valores establecidos en la UI
+
         atmsRef.set(atms);
+        List<Atm> filteredAtms = Atm.filter(atms,AtmNet.BANELCO,"Banco Santander Río");
+        for (Atm atm : filteredAtms) {
+            Log.d("atm-list", atm.toString());
+            addAtmToMap(atm);
+        }
+    }
+
+    private void addAtmToMap(Atm atm) {
+        Optional.ofNullable(mMap).ifPresent(m -> {
+            LatLng latLngLocation = new LatLng(atm.getLat(), atm.getLon());
+            m.addMarker(new MarkerOptions().position(latLngLocation).title(atm.getBank() + "&" + atm.getAddress() + "&" + atm.getNet() + "&Terminales: " + atm.getTerms()));
+        });
     }
 
     private void launchMap() {
@@ -155,8 +230,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void centerAndMarkLocation(Location location) {
         Optional.ofNullable(mMap).ifPresent(m -> {
             LatLng latLngLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            m.addMarker(new MarkerOptions().position(latLngLocation).title("Your Location"));
-            m.moveCamera(CameraUpdateFactory.newLatLng(latLngLocation));
+            int height = 75;
+            int width = 75;
+            BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.curr_loc);
+            Bitmap b=bitmapdraw.getBitmap();
+            Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
+            m.addMarker(
+                    new MarkerOptions()
+                            .position(latLngLocation)
+                            .title("current-location")
+                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))
+            );
+            CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(latLngLocation, 15);
+            m.animateCamera(yourLocation);
         });
     }
 
@@ -173,6 +259,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        mMap.setInfoWindowAdapter(
+                new CustomInfoWindowAdapter(LayoutInflater.from(this))
+        );
+
         setUpMap();
     }
 
