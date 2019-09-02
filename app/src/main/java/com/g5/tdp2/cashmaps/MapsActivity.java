@@ -125,7 +125,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void loadAtms(AtmRequest atmRequest) {
         new AtmFetchTask(atmGateway, atms -> {
             atmsRef.compareAndSet(NO_ATMS, atms);
-            Toast.makeText(this, "Cajeros cargados", Toast.LENGTH_SHORT).show();
+            if (atms.isEmpty()) {
+                Toast.makeText(this, "Error al cargar cajeros", Toast.LENGTH_SHORT).show();
+//            } else {
+                //Toast.makeText(this, "Cajeros cargados", Toast.LENGTH_SHORT).show();
+            }
         }).execute(atmRequest);
     }
 
